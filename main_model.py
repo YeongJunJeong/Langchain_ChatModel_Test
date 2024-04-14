@@ -4,8 +4,9 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
-import os
 import pandas as pd
+import os
+import re
 
 df = pd.read_csv(r"C:\Users\jyjun\git\Langchain_ChatModel_Test\대구광역시_관광지_160개.csv", encoding="cp949")
 
@@ -64,23 +65,9 @@ korean_stop_words = [
     "보다", "보이다", "등", "등등", "등등등"
     ]
 
-# def recommend(df, user_input, korean_stop_words):
-#     all_about_data = df['all about'].tolist()
-
-#     tfidf = TfidfVectorizer(stop_words=korean_stop_words)
-#     tfidf_matrix_input = tfidf.fit_transform(user_input)
-#     tfidf_matrix_all_about = tfidf.transform(all_about_data)
-
-#     # 코사인 유사도 계산
-#     cosine_sim = linear_kernel(tfidf_matrix_input, tfidf_matrix_all_about)
-
-#     # 상위 5개의 유사한 관광지 이름 출력
-#     top_place = cosine_sim.argsort()[0][-2:][::-1]
-
-#     for i, idx in enumerate(top_place, 5):
-#         print(f"{i}. {df['name'][idx]}")
 
 def recommend(df, user_input, korean_stop_words):
+    
     user_input_list = [user_input]
     
     all_about_data = df['all about'].tolist()
@@ -94,8 +81,12 @@ def recommend(df, user_input, korean_stop_words):
 
     top_place = cosine_sim.argsort()[0][-5:][::-1]
 
-    for rank, idx in enumerate(top_place, start=1):
-        print(f"{rank}. {df.iloc[idx]['name']}")
+    recommended_places = []
+    for idx in top_place:
+        recommended_places.append(df.iloc[idx]['name'])
+
+    for place in recommended_places:
+        print(place)
 
 
 
@@ -110,5 +101,12 @@ while True:
 
     # 응답 생성 및 출력
     ai_response, chat_history = response(user_input, chat_history)
-    print("가볼까:", ai_response)
-    recommend(df, user_input, korean_stop_words)    
+    
+    pattern2 = re.findall(r'^.*?(?=1\.)', ai_response, re.DOTALL)
+
+    if pattern2:
+        for item in pattern2:
+            print("가볼까: ", item.strip())
+            recommend(df, user_input, korean_stop_words)
+    else:
+        print("가볼까: ", ai_response)
